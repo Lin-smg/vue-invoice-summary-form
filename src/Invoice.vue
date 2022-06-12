@@ -159,7 +159,7 @@
           opacity="0.6"
           spinner-small
           spinner-variant="primary"
-          class="d-inline-block"
+          class="d-inline-block w-100"
         >
           <div class="text-center">Are you sure to Delete?</div>
           <br />
@@ -210,10 +210,11 @@ import { db } from "./firebase";
 import {
   doc,
   collection,
-  getDocs,
+  // getDocs,
   deleteDoc,
   query,
   orderBy,
+  onSnapshot,
 } from "firebase/firestore";
 import InvoiceDetail from "./components/InvoiceDetail.vue";
 import InvoiceCreate from "./components/InvoiceCreate.vue";
@@ -273,15 +274,15 @@ export default {
           dataFormat: this.itemFormat,
         },
         {
-          label: "Sub Total",
+          label: "Sub Total(Ks)",
           field: "subTotal",
         },
         {
-          label: "Tax",
+          label: "Tax(Ks)",
           field: "tax",
         },
         {
-          label: "Total",
+          label: "Total(Ks)",
           field: "total",
         },
       ],
@@ -360,17 +361,16 @@ export default {
 
     closeModal() {
       this.$refs["create-modal"].hide();
-      this.getData();
+      // this.getData();
     },
 
     async deleteInvoice() {
       this.loading = true;
       await deleteDoc(doc(db, "invoice", this.docId));
       this.$refs["delete-modal"].hide();
-      
-      this.$store.commit("SHOW_ALERT", { show: true, msg: "Delete Sucess" });
-      this.getData();
 
+      this.$store.commit("SHOW_ALERT", { show: true, msg: "Delete Sucess" });
+      // this.getData();
     },
 
     async getData() {
@@ -380,22 +380,34 @@ export default {
       try {
         const q = query(collection(db, "invoice"), orderBy("createAt", "desc"));
 
-        const querySnapshot = await getDocs(q, {
-          includeMetadataChanges: true,
-        });
-        querySnapshot.forEach((doc) => {
-          // console.log(doc.id, " => ", doc.data());
-          var data = doc.data();
-          data.id = doc.id;
-          this.invoiceList.push(data);
-        });
+        // const querySnapshot = await getDocs(q, {
+        //   includeMetadataChanges: true,
+        // });
+        onSnapshot(q, (querySnapshot) => {
+          this.invoiceList = [];
+          querySnapshot.forEach((doc) => {
+            var data = doc.data();
+            data.id = doc.id;
+            this.invoiceList.push(data);
+            
+          });
 
-        this.totalRows = this.invoiceList.length;
+          this.totalRows = this.invoiceList.length;
+          this.loading = false;
+        });
+        // querySnapshot.forEach((doc) => {
+        //   // console.log(doc.id, " => ", doc.data());
+        //   var data = doc.data();
+        //   data.id = doc.id;
+        //   this.invoiceList.push(data);
+        // });
+
+        // this.totalRows = this.invoiceList.length;
       } catch (error) {
         console.log("error");
       }
 
-      this.loading = false;
+      // this.loading = false;
     },
 
     onFiltered(items) {
